@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { columns } from "./columns";
 import { DataTable } from "./data-table";
 import axios from 'axios'
+import { ClientDialog } from '@/components/ClientDialog'
 
 // Simulate a database read for tasks.
 const client =
@@ -40,11 +41,9 @@ export function ClientTable({ className } : React.HTMLAttributes<HTMLDivElement>
         <div className="flex items-center justify-between space-y-2">
           <div>
             <h2 className="text-2xl font-bold tracking-tight">Client List</h2>
-            <p className="text-muted-foreground">
-              Here&apos;s a list of your tasks for this month!
-            </p>
           </div>
           <div className="flex items-center space-x-2">
+            <ClientDialog />
           </div>
         </div>
         <DataTable data={client} columns={columns} />

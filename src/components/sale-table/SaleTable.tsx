@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { columns } from "./columns";
 import { DataTable } from "./data-table";
 import axios from 'axios'
+import { ReceiptSheet } from "../ReceiptSheet";
 
 // Simulate a database read for tasks.
 const sale =
@@ -39,11 +40,9 @@ export function SaleTable({ className } : React.HTMLAttributes<HTMLDivElement>) 
         <div className="flex items-center justify-between space-y-2">
           <div>
             <h2 className="text-2xl font-bold tracking-tight">Sale List</h2>
-            <p className="text-muted-foreground">
-              Here&apos;s a list of your tasks for this month!
-            </p>
           </div>
           <div className="flex items-center space-x-2">
+            <ReceiptSheet />
           </div>
         </div>
         <DataTable data={sale} columns={columns} />
