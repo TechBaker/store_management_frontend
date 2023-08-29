@@ -11,20 +11,26 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
+import InvoiceForm from "./ReceiptForm"
 
 export function ReceiptSheet() {
   return (
-<Sheet>
-  <SheetTrigger>Open</SheetTrigger>
-  <SheetContent className="w-4/6">
-    <SheetHeader>
-      <SheetTitle>Are you sure absolutely sure?</SheetTitle>
-      <SheetDescription>
-        This action cannot be undone. This will permanently delete your account and remove your data from our servers.
-      </SheetDescription>
-    </SheetHeader>
-  </SheetContent>
-</Sheet>
-
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button variant="outline">New Receipt</Button>
+      </SheetTrigger>
+      <SheetContent className="w-4/6">
+        <SheetHeader>
+          <SheetTitle>New Receipt</SheetTitle>
+        </SheetHeader>
+        <InvoiceForm />
+        <SheetFooter>
+          <SheetClose asChild>
+            <Button type="submit">Save</Button>
+          </SheetClose>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   )
 }
+
