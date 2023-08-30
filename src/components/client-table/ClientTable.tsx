@@ -24,7 +24,7 @@ export function ClientTable({ className } : React.HTMLAttributes<HTMLDivElement>
   const fetchData = async () => {
     try {
       const response = await axios.get('http://localhost:8000/api/client');
-      const data = await response.data;~
+      const data = await response.data;
       console.log(data);
       setClients(data);
     } catch (error) {

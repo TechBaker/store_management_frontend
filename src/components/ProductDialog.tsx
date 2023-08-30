@@ -27,22 +27,44 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import axios from "axios"
-
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+[
+    {
+        "id": 1,
+        "": "Camera",
+        "": "camera for taking pictures",
+        "": "1234567890943245",
+        "": "CA-129",
+        "image_url": null,
+        "": "-0.02",
+        "": "-0.01",
+        "": 2,
+        "": "0.00",
+        "": 1
+    }
+]
 const formSchema = z.object({
-  first_name: z.string(),
-  last_name: z.string(),
-  email: z.string(),
-  address: z.string(),
-  phone_number: z.string(),
-  balance: z.string(),
+  product_name: z.string(),
+  description: z.string(),
+  barcode: z.string(),
+  reference: z.string(),
+  buying_price: z.string(),
+  selling_price: z.string(),
+  quantity_in_stock: z.string(),
+  value_added_tax: z.string(),
+  categories: z.string(),
 })
 
-export function ClientDialog() {
+export function ProductDialog() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: "empty@empty.com",
-      balance: "0.00",
     },
   })
  
@@ -68,7 +90,7 @@ export function ClientDialog() {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Add Client</DialogTitle>
+          <DialogTitle>Add Product</DialogTitle>
           <DialogDescription>
             Fill all the fields
           </DialogDescription>
@@ -77,10 +99,10 @@ export function ClientDialog() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
             <FormField
               control={form.control}
-              name="first_name"
+              name="product_name"
               render={({ field }) => (
                 <FormItem className="grid grid-cols-4 items-center gap-x-4">
-                  <FormLabel className="text-right">First Name</FormLabel>
+                  <FormLabel className="text-right">Product Name</FormLabel>
                   <FormControl className="col-span-3">
                     <Input placeholder="" {...field} />
                   </FormControl>
@@ -90,10 +112,10 @@ export function ClientDialog() {
             />
             <FormField
               control={form.control}
-              name="last_name"
+              name="description"
               render={({ field }) => (
                 <FormItem className="grid grid-cols-4 items-center gap-x-4">
-                  <FormLabel className="text-right">Last Name</FormLabel>
+                  <FormLabel className="text-right">Description</FormLabel>
                   <FormControl className="col-span-3">
                     <Input placeholder="" {...field} />
                   </FormControl>
@@ -103,23 +125,10 @@ export function ClientDialog() {
             />
             <FormField
               control={form.control}
-              name="email"
+              name="barcode"
               render={({ field }) => (
                 <FormItem className="grid grid-cols-4 items-center gap-x-4">
-                  <FormLabel className="text-right">Email</FormLabel>
-                  <FormControl className="col-span-3">
-                    <Input placeholder="" type="email" {...field} />
-                  </FormControl>
-                  <FormMessage className="col-start-2 col-span-3"/>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="address"
-              render={({ field }) => (
-                <FormItem className="grid grid-cols-4 items-center gap-x-4">
-                  <FormLabel className="text-right">Address</FormLabel>
+                  <FormLabel className="text-right">Barcode</FormLabel>
                   <FormControl className="col-span-3">
                     <Input placeholder="" {...field} />
                   </FormControl>
@@ -129,12 +138,12 @@ export function ClientDialog() {
             />
             <FormField
               control={form.control}
-              name="phone_number"
+              name="reference"
               render={({ field }) => (
                 <FormItem className="grid grid-cols-4 items-center gap-x-4">
-                  <FormLabel className="text-right">Phone Number</FormLabel>
+                  <FormLabel className="text-right">Reference</FormLabel>
                   <FormControl className="col-span-3">
-                    <Input placeholder="" type="tel" {...field} />
+                    <Input placeholder="" {...field} />
                   </FormControl>
                   <FormMessage className="col-start-2 col-span-3"/>
                 </FormItem>
@@ -142,10 +151,10 @@ export function ClientDialog() {
             />
             <FormField
               control={form.control}
-              name="balance"
+              name="buying_price"
               render={({ field }) => (
                 <FormItem className="grid grid-cols-4 items-center gap-x-4">
-                  <FormLabel className="text-right">Starting Balance</FormLabel>
+                  <FormLabel className="text-right">Buying Price</FormLabel>
                   <FormControl className="col-span-3">
                     <Input placeholder="" type="number" step="0.01" {...field} />
                   </FormControl>
@@ -153,6 +162,68 @@ export function ClientDialog() {
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name="selling_price"
+              render={({ field }) => (
+                <FormItem className="grid grid-cols-4 items-center gap-x-4">
+                  <FormLabel className="text-right">Selling Price</FormLabel>
+                  <FormControl className="col-span-3">
+                    <Input placeholder="" type="number" step="0.01" {...field} />
+                  </FormControl>
+                  <FormMessage className="col-start-2 col-span-3"/>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="quantity_in_stock"
+              render={({ field }) => (
+                <FormItem className="grid grid-cols-4 items-center gap-x-4">
+                  <FormLabel className="text-right">Quantity</FormLabel>
+                  <FormControl className="col-span-3">
+                    <Input placeholder="" type="number" {...field} />
+                  </FormControl>
+                  <FormMessage className="col-start-2 col-span-3"/>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="value_added_tax"
+              render={({ field }) => (
+                <FormItem className="grid grid-cols-4 items-center gap-x-4">
+                  <FormLabel className="text-right">Value Added Tax</FormLabel>
+                  <FormControl className="col-span-3">
+                    <Input placeholder="" type="number" {...field} />
+                  </FormControl>
+                  <FormMessage className="col-start-2 col-span-3"/>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="categories"
+              render={({ field }) => (
+                <FormItem className="grid grid-cols-4 items-center gap-x-4">
+                  <FormLabel className="text-right">Category</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl className="col-span-3">
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="1" >Category 1</SelectItem>
+                      <SelectItem value="2" >Category 2</SelectItem>
+                      <SelectItem value="3" >Category 3</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage className="col-start-2 col-span-3"/>
+                </FormItem>
+              )}
+            />
+
             <DialogFooter>
               <Button type="submit">Add</Button>
             </DialogFooter>
