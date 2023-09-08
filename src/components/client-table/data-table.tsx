@@ -25,15 +25,18 @@ import {
 
 import { DataTablePagination } from "@/components/client-table/data-table-pagination"
 import { DataTableToolbar } from "@/components/client-table/data-table-toolbar"
+import { Client, clientSchema } from "../../data/schema"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
+  setClients: React.Dispatch<React.SetStateAction<Client[]>>
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  setClients,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({})
   const [columnVisibility, setColumnVisibility] =
@@ -51,6 +54,14 @@ export function DataTable<TData, TValue>({
       columnVisibility,
       rowSelection,
       columnFilters,
+    },
+    meta: {
+      delClient: (index: number) => {
+        data.splice(index, 1)
+        console.log(data)
+        setClients(clientSchema.array().parse(data))
+      },
+      setClients: setClients,
     },
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,

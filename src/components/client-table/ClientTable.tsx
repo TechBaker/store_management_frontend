@@ -4,6 +4,8 @@ import { columns } from "./columns";
 import { DataTable } from "./data-table";
 import axios from 'axios'
 import { ClientDialog } from '@/components/ClientDialog'
+import { Client } from "@/data/schema";
+import { Button } from "../ui/button";
 
 // Simulate a database read for tasks.
 const client =
@@ -15,15 +17,23 @@ const client =
     "email": "client@test.com",
     "phone_number": "1234567890",
     "address": "123 Somewhere, Earth"
+  },
+  {
+    "id": 2,
+    "first_name": "client",
+    "last_name": "client",
+    "email": "client@test.com",
+    "phone_number": "1234567890",
+    "address": "123 Somewhere, Earth"
   }
 ]
 
 export function ClientTable({ className } : React.HTMLAttributes<HTMLDivElement>) {
-  const [clients, setClients] = useState([])
+  const [clients, setClients] = useState<Client[]>([])
 
   const fetchData = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/api/client');
+      const response = await axios.get('http://localhost:8000/api/clients');
       const data = await response.data;
       console.log(data);
       setClients(data);
@@ -32,9 +42,9 @@ export function ClientTable({ className } : React.HTMLAttributes<HTMLDivElement>
     }
   };
 
-  //useEffect(() => {
-  //  fetchData()
-  //}, [])
+  useEffect(() => {
+    fetchData()
+  }, [])
 
   return (
       <div className={cn("hidden h-full flex-1 flex-col space-y-8 p-8 md:flex", className)}>
@@ -43,10 +53,10 @@ export function ClientTable({ className } : React.HTMLAttributes<HTMLDivElement>
             <h2 className="text-2xl font-bold tracking-tight">Client List</h2>
           </div>
           <div className="flex items-center space-x-2">
-            <ClientDialog />
+            <ClientDialog setClients={setClients} />
           </div>
         </div>
-        <DataTable data={client} columns={columns} />
+        <DataTable data={clients} columns={columns} setClients={setClients}/>
       </div>
   )
 }

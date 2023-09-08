@@ -23,8 +23,8 @@ export const columns: ColumnDef<Invoice>[] = [
     ),
     cell: ({ row }) => {
       return (
-        <div className="flex w-[100px] items-center">
-          <span>{row.getValue("invoice_date")}</span>
+        <div className="flex w-[200px] items-center">
+          <span>{new Date(row.getValue("invoice_date")).toLocaleString('en-GB')}</span>
         </div>
       )
     },
@@ -36,8 +36,8 @@ export const columns: ColumnDef<Invoice>[] = [
     ),
     cell: ({ row }) => {
       return (
-        <div className="flex w-[300px] items-center">
-          <span>{row.getValue("due_date")}</span>
+        <div className="flex w-[200px] items-center">
+          <span>{new Date(row.getValue("due_date")).toLocaleString('en-GB')}</span>
         </div>
       )
     },
@@ -82,7 +82,7 @@ export const columns: ColumnDef<Invoice>[] = [
     cell: ({ row }) => {
       return (
         <div className="flex items-center">
-          <span>{row.getValue("is_paid")}</span>
+          <span>{row.getValue("is_paid") == true ? "YES" : "NO"}</span>
         </div>
       )
     }

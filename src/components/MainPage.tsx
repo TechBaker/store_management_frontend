@@ -16,13 +16,13 @@ export default function MainPage() {
         <div className="border-t">
           <div className="bg-background">
             <div className="flex ">
-              <SideBar className="hidden lg:block w-48" />
+              <SideBar className="hidden lg:block w-48 border-r" />
               <Routes>
-                <Route path="/" element={ <ProductTable className="border-l"/> } />
-                <Route path="/products" element={ <ProductTable className="border-l"/> } />
-                <Route path="/clients" element={ <ClientTable className="border-l"/> } />
-                <Route path="/sales" element={ <SaleTable className="border-l"/> } />
-                <Route path="/invoices" element={ <InvoiceTable className="border-l"/> } />
+                <Route path="/" element={ <ProductTable /> } />
+                <Route path="/products" element={ <ProductTable /> } />
+                <Route path="/clients" element={ <ClientTable /> } />
+                <Route path="/sales" element={ <SaleTable /> } />
+                <Route path="/invoices" element={ <InvoiceTable /> } />
               </Routes>
             </div>
           </div>

@@ -1,6 +1,7 @@
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
+import { useState } from "react"
 
 import {
   Dialog,
@@ -25,53 +26,119 @@ import {
 } from "@/components/ui/form"
 
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import axios from "axios"
+import { Client } from "@/data/schema"
+import { FileEdit, Trash2 } from "lucide-react"
 
 const formSchema = z.object({
-  first_name: z.string(),
-  last_name: z.string(),
-  email: z.string(),
-  address: z.string(),
-  phone_number: z.string(),
-  balance: z.string(),
+  first_name: z
+    .string()
+    .min(1, {
+      message: "Required"
+    }),
+  last_name: z
+    .string()
+    .min(1, {
+      message: "Required"
+    }),
+  email: z
+    .string()
+    .min(1, {
+      message: "Required"
+    }),
+  address: z
+    .string()
+    .min(1, {
+      message: "Required"
+    }),
+  phone_number: z
+    .string()
+    .min(1, {
+      message: "Required"
+    }),
+  balance: z
+    .string()
+    .min(1, {
+      message: "Required"
+    }),
 })
 
-export function ClientDialog() {
+interface Props {
+  setClients: React.Dispatch<React.SetStateAction<Client[]>>
+  client?: Client
+}
+
+export function ClientDialog( { setClients, client }: Props ) {
+  const [open, setOpen] = useState(false)
+
+  const defaultValues = {
+    first_name: "",
+    last_name: "",
+    email: "empty@empty.com",
+    address: "",
+    phone_number: "",
+    balance: "0.00",
+  }
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      email: "empty@empty.com",
-      balance: "0.00",
-    },
+    defaultValues: client || defaultValues,
   })
- 
+
   // 2. Define a submit handler.
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    // Do something with the form values.
-    //const url = 'http://localhost:8000/api/client/add'
-    //const data = values
 
-    //try {
-    //  const response = await axios.post(url, data)
-    //  console.log('Response:', response.data)
-    //} catch (error) {
-    //  console.error('Error:', error)
-    //}
-    console.log(values)
+    if (!client) {
+      try {
+        const response = await axios.post('http://localhost:8000/api/client/add', values)
+        console.log('Response:', response.data)
+        setClients(clients => [...clients, response.data])
+        setOpen(false)
+      } catch (error) {
+        console.error('Error:', error)
+      }
+      console.log(values)
+    } else {
+      try {
+        const response = await axios.put('http://localhost:8000/api/client/' + client.id, values)
+        console.log('Response:', response.data)
+        setClients(clients => 
+          clients.map((item) =>
+            item.id === client.id ? response.data : item))
+        setOpen(false)
+      } catch (error) {
+        console.error('Error:', error)
+      }
+    }
   }
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={
+      (open) => {
+        setOpen(open)
+        form.clearErrors()
+        form.reset()
+      }
+    }>
       <DialogTrigger asChild>
-        <Button variant="outline">Add Client</Button>
+        {!client
+          ? <Button variant="outline">Add Client</Button>
+          : <Button size="icon">
+              <FileEdit className="w-4 h-4"/>
+            </Button>
+        }
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px]" onPointerDownOutside={(event: any) => { event.preventDefault() }}>
         <DialogHeader>
-          <DialogTitle>Add Client</DialogTitle>
-          <DialogDescription>
-            Fill all the fields
-          </DialogDescription>
+          {!client
+            ? <>
+                <DialogTitle>Add Client</DialogTitle>
+                <DialogDescription>
+                  Fill all the fields
+                </DialogDescription>
+              </>
+            : <DialogTitle>Modify Client</DialogTitle>
+          }
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
@@ -154,7 +221,9 @@ export function ClientDialog() {
               )}
             />
             <DialogFooter>
-              <Button type="submit">Add</Button>
+              <Button type="submit">
+                {!client ? 'Add' : 'Modify'}
+              </Button>
             </DialogFooter>
           </form>
         </Form>

@@ -25,15 +25,18 @@ import {
 
 import { DataTablePagination } from "@/components/product-table/data-table-pagination"
 import { DataTableToolbar } from "@/components/product-table/data-table-toolbar"
+import { Product, productSchema } from "@/data/schema"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
+  setProducts: React.Dispatch<React.SetStateAction<Product[]>>
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  setProducts,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({})
   const [columnVisibility, setColumnVisibility] =
@@ -51,6 +54,14 @@ export function DataTable<TData, TValue>({
       columnVisibility,
       rowSelection,
       columnFilters,
+    },
+    meta: {
+      delProduct: (index: number) => {
+        data.splice(index, 1)
+        console.log(data)
+        setProducts(productSchema.array().parse(data))
+      },
+      setProducts: setProducts,
     },
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,

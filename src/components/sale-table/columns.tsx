@@ -23,8 +23,8 @@ export const columns: ColumnDef<Sale>[] = [
     ),
     cell: ({ row }) => {
       return (
-        <div className="flex w-[100px] items-center">
-          <span>{row.getValue("sale_date")}</span>
+        <div className="flex items-center">
+          <span>{new Date(row.getValue("sale_date")).toLocaleString('en-GB')}</span>
         </div>
       )
     },
@@ -36,7 +36,7 @@ export const columns: ColumnDef<Sale>[] = [
     ),
     cell: ({ row }) => {
       return (
-        <div className="flex w-[300px] items-center">
+        <div className="flex items-center">
           <span>{row.getValue("total_amount")}</span>
         </div>
       )

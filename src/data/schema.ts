@@ -9,6 +9,7 @@ export const clientSchema = z.object({
     email: z.string(),
     phone_number: z.string(),
     address: z.string(),
+    balance: z.string()
 })
 
 export type Client = z.infer<typeof clientSchema>
@@ -19,11 +20,11 @@ export const productSchema = z.object({
     description: z.string(),
     barcode: z.string(),
     reference: z.string(),
-    category: z.string(),
-    image_url: z.string(),
+    image_url: z.any().nullable(),
     buying_price: z.string(),
     selling_price: z.string(),
     quantity_in_stock: z.number(),
+    categories: z.number(),
     value_added_tax: z.string(),
 })
 
@@ -31,7 +32,7 @@ export type Product = z.infer<typeof productSchema>
 
 export const saleSchema = z.object({
     id: z.number(),
-    sale_date: z.string(),
+    sale_date: z.string().datetime(),
     total_amount: z.string(),
     client: z.number(),
     items: z.number(),
@@ -41,8 +42,8 @@ export type Sale = z.infer<typeof saleSchema>
 
 export const invoiceSchema = z.object({
     id: z.number(),
-    invoice_date: z.string(),
-    due_date: z.string(),
+    invoice_date: z.string().datetime(),
+    due_date: z.string().datetime(),
     total_amount: z.string(),
     discount_amount: z.string(),
     is_paid: z.boolean(),

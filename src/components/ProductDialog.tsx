@@ -34,66 +34,165 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-[
-    {
-        "id": 1,
-        "": "Camera",
-        "": "camera for taking pictures",
-        "": "1234567890943245",
-        "": "CA-129",
-        "image_url": null,
-        "": "-0.02",
-        "": "-0.01",
-        "": 2,
-        "": "0.00",
-        "": 1
-    }
-]
+import { useState } from "react"
+import { Product, productSchema } from "@/data/schema"
+import { FileEdit } from "lucide-react"
+
+const MAX_IMAGE_SIZE = 5242880; // 5 MB
+const ALLOWED_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/jpg",
+];
+
 const formSchema = z.object({
-  product_name: z.string(),
-  description: z.string(),
-  barcode: z.string(),
-  reference: z.string(),
-  buying_price: z.string(),
-  selling_price: z.string(),
-  quantity_in_stock: z.string(),
-  value_added_tax: z.string(),
-  categories: z.string(),
+  product_name: z
+    .string()
+    .min(1, {
+      message: 'Required'
+    }),
+  image_url: z
+      .custom<File>((val) => val instanceof File || null || undefined, "Required")
+      .refine(
+        (file) => file.size <= MAX_IMAGE_SIZE,
+        `Each file size should be less than 5 MB.`
+      )
+      .refine(
+        (file) => ALLOWED_IMAGE_TYPES.includes(file.type),
+        "Only these types are allowed .jpg, .jpeg, .png and .webp"
+      )
+      .nullable(),
+  description: z
+    .string()
+    .min(1, {
+      message: 'Required'
+    }),
+  barcode: z
+    .string()
+    .min(1, {
+      message: 'Required'
+    }),
+  reference: z
+    .string()
+    .min(1, {
+      message: 'Required'
+    }),
+  buying_price: z
+    .string()
+    .min(1, {
+      message: 'Required'
+    }),
+  selling_price: z
+    .string()
+    .min(1, {
+      message: 'Required'
+    }),
+  quantity_in_stock: z
+    .number(),
+  value_added_tax: z
+    .string()
+    .min(1, {
+      message: 'Required'
+    }),
+  categories: z
+    .coerce
+    .number(),
 })
 
-export function ProductDialog() {
+interface Props {
+  setProducts: React.Dispatch<React.SetStateAction<Product[]>>
+  product?: Product
+}
+
+export function ProductDialog( { setProducts, product }: Props ) {
+  const [open, setOpen] = useState(false)
+
+  const defaultValues = {
+    product_name: "",
+    image_url: null,
+    description: "",
+    barcode: "",
+    reference: "",
+    buying_price: "",
+    selling_price: "",
+    quantity_in_stock: 0,
+    value_added_tax: "",
+    categories: 1,
+  }
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-    },
+    defaultValues: product || defaultValues,
   })
  
   // 2. Define a submit handler.
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    // Do something with the form values.
-    //const url = 'http://localhost:8000/api/client/add'
-    //const data = values
+    const data = new FormData()
 
-    //try {
-    //  const response = await axios.post(url, data)
-    //  console.log('Response:', response.data)
-    //} catch (error) {
-    //  console.error('Error:', error)
-    //}
-    console.log(values)
+    data.append("product_name", values.product_name)
+    if (values.image_url != null)
+      data.append("image_url", values.image_url)
+    data.append("description", values.description)
+    data.append("barcode", values.barcode)
+    data.append("reference", values.reference)
+    data.append("buying_price", values.buying_price)
+    data.append("selling_price", values.selling_price)
+    data.append("quantity_in_stock", values.quantity_in_stock.toString())
+    data.append("value_added_tax", values.value_added_tax)
+    data.append("categories", values.categories.toString())
+
+    if (!product) {
+      try {
+        const response = await axios.post('http://localhost:8000/api/product/add', data)
+        console.log('Response:', response.data)
+        setProducts((products: Product[]) => [...products, response.data])
+
+        console.log(values)
+        setOpen(false)
+      } catch (error) {
+        console.error('Error:', error)
+      }
+    } else {
+      try {
+        const response = await axios.put('http://localhost:8000/api/product/' + product.id, data)
+        console.log('Response:', response.data)
+        setProducts(products => 
+          products.map((item) =>
+            item.id === product.id ? response.data : item))
+        setOpen(false)
+
+      } catch (error) {
+        console.error('Error:', error)
+      }
+    }
   }
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={
+      (open) => {
+        setOpen(open)
+        form.clearErrors()
+        form.reset()
+      }
+    }>
       <DialogTrigger asChild>
-        <Button variant="outline">Add Client</Button>
+        {!product
+          ? <Button variant="outline">Add Product</Button>
+          : <Button size="icon">
+              <FileEdit className="w-4 h-4"/>
+            </Button>
+        }
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px]" onPointerDownOutside={(event: any) => { event.preventDefault() }}>
         <DialogHeader>
-          <DialogTitle>Add Product</DialogTitle>
-          <DialogDescription>
-            Fill all the fields
-          </DialogDescription>
+          {!product
+            ? <>
+                <DialogTitle>Add Product</DialogTitle>
+                <DialogDescription>
+                  Fill all the fields
+                </DialogDescription>
+             </>
+            : <DialogTitle>Modify Product</DialogTitle>
+          }
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
@@ -105,6 +204,25 @@ export function ProductDialog() {
                   <FormLabel className="text-right">Product Name</FormLabel>
                   <FormControl className="col-span-3">
                     <Input placeholder="" {...field} />
+                  </FormControl>
+                  <FormMessage className="col-start-2 col-span-3"/>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="image_url"
+              render={({ field }) => (
+                <FormItem className="grid grid-cols-4 items-center gap-x-4">
+                  <FormLabel className="text-right">Image</FormLabel>
+                  <FormControl className="col-span-3">
+                    <Input
+                      accept=".jpg, .jpeg, .png"
+                      type="file"
+                      onChange={(e) =>
+                        field.onChange(e.target.files ? e.target.files[0] : null)
+                      }
+                    />
                   </FormControl>
                   <FormMessage className="col-start-2 col-span-3"/>
                 </FormItem>
@@ -207,16 +325,16 @@ export function ProductDialog() {
               render={({ field }) => (
                 <FormItem className="grid grid-cols-4 items-center gap-x-4">
                   <FormLabel className="text-right">Category</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value.toString()}>
                     <FormControl className="col-span-3">
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a category" />
+                        <SelectValue placeholder="Select a verified email to display" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="1" >Category 1</SelectItem>
-                      <SelectItem value="2" >Category 2</SelectItem>
-                      <SelectItem value="3" >Category 3</SelectItem>
+                      <SelectItem value={"1"}>m@example.com</SelectItem>
+                      <SelectItem value={"2"}>m@google.com</SelectItem>
+                      <SelectItem value={"3"}>m@support.com</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage className="col-start-2 col-span-3"/>
@@ -225,7 +343,9 @@ export function ProductDialog() {
             />
 
             <DialogFooter>
-              <Button type="submit">Add</Button>
+              <Button type="submit">
+                {!product ? 'Add' : 'Modify'}
+              </Button>
             </DialogFooter>
           </form>
         </Form>
