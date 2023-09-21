@@ -43,9 +43,7 @@ const formSchema = z.object({
     }),
   email: z
     .string()
-    .min(1, {
-      message: "Required"
-    }),
+    .email(),
   address: z
     .string()
     .min(1, {

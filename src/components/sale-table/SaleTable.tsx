@@ -23,7 +23,7 @@ export function SaleTable({ className } : React.HTMLAttributes<HTMLDivElement>) 
   const fetchData = async () => {
     try {
       const response = await axios.get('http://localhost:8000/api/sale');
-      const data = await response.data;~
+      const data = await response.data;
       console.log(data);
       setProducts(data);
     } catch (error) {

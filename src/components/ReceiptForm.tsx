@@ -1,268 +1,267 @@
-import { useState } from 'react';
-import { uid } from 'uid';
-import InvoiceItem from './InvoiceItem';
-import incrementString from './str';
-const date = new Date();
-const today = date.toLocaleDateString('en-GB', {
-  month: 'numeric',
-  day: 'numeric',
-  year: 'numeric',
-});
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import * as z from "zod"
+import { uid } from "uid"
 
-const InvoiceForm = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [discount, setDiscount] = useState('');
-  const [tax, setTax] = useState('');
-  const [invoiceNumber, setInvoiceNumber] = useState(1);
-  const [cashierName, setCashierName] = useState('');
-  const [customerName, setCustomerName] = useState('');
+import { Button } from "@/components/ui/button"
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { toast } from "@/components/ui/use-toast"
+import { Select, 
+    SelectContent, 
+    SelectTrigger, 
+    SelectValue,
+    SelectItem } from "./ui/select"
+import { Separator } from "./ui/separator"
+import { useState } from "react"
+import { ReceiptItem } from "./ReceiptItem"
+import axios from "axios"
+
+const FormSchema = z.object({
+  client: z.string().min(2, {
+    message: "Username must be at least 2 characters.",
+  }),
+  discount: z.coerce.number(),
+  total: z.number(),
+  payment_method: z.string()
+})
+
+type Item = {
+  id: number,
+  barcode: string,
+  name: string,
+  price: number,
+  disc: number,
+  qty: number,
+  t_price: number,
+}
+
+export function ReceiptForm() {
+  const form = useForm<z.infer<typeof FormSchema>>({
+    resolver: zodResolver(FormSchema),
+    defaultValues: {
+      discount: 0,
+      total: 0
+    }
+    
+  })
+
+  const findItem = async (barcode: string) => {
+    try {
+      const response = await axios.get('http://localhost:8000/api/product/barcode/' + barcode);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      return null
+    }
+  }
+  
   const [items, setItems] = useState([
-    {
-      id: uid(6),
-      name: '',
-      qty: 1,
-      price: '1.00',
-    },
-  ]);
-
-  const reviewInvoiceHandler = (event: any) => {
-    event.preventDefault();
-    setIsOpen(true);
-  };
-
-  const addNextInvoiceHandler = () => {
-    setInvoiceNumber((prevNumber: any) => incrementString(prevNumber));
-    setItems([
       {
         id: uid(6),
-        name: '',
+        barcode: "",
+        name: "",
+        price: '0.00',
+        disc: '0.00',
         qty: 1,
-        price: '1.00',
+        t_price: '0.00',
       },
-    ]);
-  };
+  ])
 
   const addItemHandler = () => {
-    const id = uid(6);
     setItems((prevItem) => [
       ...prevItem,
       {
-        id: id,
-        name: '',
+        id: uid(6),
+        barcode: "",
+        name: "",
+        price: '0.00',
+        disc: '0.00',
         qty: 1,
-        price: '1.00',
+        t_price: '0.00',
       },
-    ]);
-  };
-
-  const deleteItemHandler = (id: any) => {
+    ])
+  }
+  const deleteItemHandler = (id: string) => {
     setItems((prevItem) => prevItem.filter((item) => item.id !== id));
-  };
-
-  const edtiItemHandler = (event: any) => {
+  }
+  const editItemHandler = (event: any) => {
     const editedItem = {
       id: event.target.id,
       name: event.target.name,
       value: event.target.value,
     };
 
-    const newItems = items.map((items: any) => {
-      for (const key in items) {
-        if (key === editedItem.name && items.id === editedItem.id) {
-          items[key] = editedItem.value;
+    const updateItems = async () => {
+      let finalPrice = 0
+      const updatedItems = await Promise.all(items.map(async (item: any) => {
+        for (const key in item) {
+          if (key === editedItem.name && item.id === editedItem.id) {
+            item[key] = editedItem.value;
+            if (key === 'barcode') {
+              const result = await findItem(item[key])
+              item['name'] = result.product_name
+              item['price'] = result.selling_price
+              item['t_price'] = (item['price'] - (item['price'] * (item['disc'] / 100))) * item['qty']
+            } else if (key === 'disc') {
+              item['t_price'] = (item['price'] - (item['price'] * (item['disc'] / 100))) * item['qty']
+            } else if (key === 'qty') {
+              item['t_price'] = item['price'] * item['qty'];
+            }
+          }
         }
-      }
-      return items;
-    });
-
-    setItems(newItems);
+        finalPrice += item['t_price']
+        return item;
+      }));
+      form.setValue('total', finalPrice * (1 - form.getValues('discount')/100))
+      setItems(updatedItems);
+    };
+    updateItems()
   };
 
-  const subtotal = items.reduce((prev: any, curr: any) => {
-    if (curr.name.trim().length > 0)
-      return prev + Number(curr.price * Math.floor(curr.qty));
-    else return prev;
-  }, 0);
-  const taxRate = (subtotal) / 100;
-  const discountRate = (subtotal) / 100;
-  const total = subtotal - discountRate + taxRate;
+  const getTotal = () => {
+    return items.reduce((accumulator, item) => accumulator + Number(item.t_price), 0)
+  }
+
+  function onSubmit(data: z.infer<typeof FormSchema>) {
+    toast({
+      title: "You submitted the following values:",
+      description: (
+        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
+          <code className="text-white">{JSON.stringify(data, null, 2)}</code>
+        </pre>
+      ),
+    })
+  }
 
   return (
-    <form
-      className="relative flex flex-col px-2 md:flex-row"
-      onSubmit={reviewInvoiceHandler}
-    >
-      <div className="my-6 flex-1 space-y-2  rounded-md bg-white p-4 shadow-sm sm:space-y-4 md:p-6">
-        <div className="flex flex-col justify-between space-y-2 border-b border-gray-900/10 pb-4 md:flex-row md:items-center md:space-y-0">
-          <div className="flex space-x-2">
-            <span className="font-bold">Current Date: </span>
-            <span>{today}</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <label className="font-bold" htmlFor="invoiceNumber">
-              Invoice Number:
-            </label>
-            <input
-              required
-              className="max-w-[130px]"
-              type="number"
-              name="invoiceNumber"
-              id="invoiceNumber"
-              min="1"
-              step="1"
-              value={invoiceNumber}
-            />
-          </div>
-        </div>
-        <h1 className="text-center text-lg font-bold">INVOICE</h1>
-        <div className="grid grid-cols-2 gap-2 pt-4 pb-8">
-          <label
-            htmlFor="cashierName"
-            className="text-sm font-bold sm:text-base"
-          >
-            Cashier:
-          </label>
-          <input
-            required
-            className="flex-1"
-            placeholder="Cashier name"
-            type="text"
-            name="cashierName"
-            id="cashierName"
-            value={cashierName}
-            onChange={(event) => setCashierName(event.target.value)}
+    <Form {...form} >
+      <form onSubmit={form.handleSubmit(onSubmit)} className=" space-y-4">
+        <div className="flex flex-flow space-x-20">
+          <FormField
+            control={form.control}
+            name="client"
+            render={({ field }) => (
+              <FormItem className="w-1/2">
+                <FormLabel>Client</FormLabel>
+                <FormControl>
+                  <Input placeholder="Client" {...field} />
+                </FormControl>
+                <FormDescription/>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-          <label
-            htmlFor="customerName"
-            className="col-start-2 row-start-1 text-sm font-bold md:text-base"
-          >
-            Customer:
-          </label>
-          <input
-            required
-            className="flex-1"
-            placeholder="Customer name"
-            type="text"
-            name="customerName"
-            id="customerName"
-            value={customerName}
-            onChange={(event) => setCustomerName(event.target.value)}
-          />
+          <FormField
+            control={form.control}
+            name="discount"
+            render={({ field }) => (
+              <FormItem className="w-1/2">
+                <FormLabel>Discount</FormLabel>
+                <div className="flex flex-flow space-x-2 space-y-1">
+                  <FormControl>
+                    <Input type="number" step={1} min={0} placeholder="discount" {...field}
+                          onChange={(e) => {
+                            field.onChange(e)
+                            form.setValue('total', getTotal() * (1 - form.getValues('discount')/100))
+                          }}/>
+                  </FormControl>
+                  <h1 className="">%</h1>
+                </div>
+                <FormDescription/>
+                <FormMessage />
+              </FormItem>
+            )}
+          />         
         </div>
+        <div className="flex flex-flow space-x-20">
+        <FormField
+            control={form.control}
+            name="payment_method"
+            render={({ field }) => (
+              <FormItem className="w-1/2">
+                <FormLabel>Payment Method</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger >
+                      <SelectValue placeholder="Payment Method" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="on account">On Account</SelectItem>
+                    <SelectItem value="check">Check</SelectItem>
+                    <SelectItem value="bank card">Bank Card</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormDescription/>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        <FormField
+          control={form.control}
+          name='total'
+          render={({ field }) => (
+            <FormItem className="w-1/2">
+              <FormLabel>Total</FormLabel>
+              <FormControl>
+                <Input placeholder="Total" className="h-[80px]" readOnly {...field} />
+              </FormControl>
+              <FormDescription/>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        </div>
+        <div className="flex flex-flow space-x-20">
+          <Button type="submit">Submit</Button>
+          <Button type="button">Print</Button>
+        </div>
+        <Separator/>
         <table className="w-full p-4 text-left">
           <thead>
             <tr className="border-b border-gray-900/10 text-sm md:text-base">
-              <th>ITEM</th>
-              <th>QTY</th>
+              <th>BAR CODE</th>
+              <th>NAME</th>
               <th className="text-center">PRICE</th>
-              <th className="text-center">ACTION</th>
+              <th className="text-center">DISC.</th>
+              <th className="text-center">QTY</th>
+              <th className="text-center">T. PRICE</th>
             </tr>
           </thead>
           <tbody>
             {items.map((item) => (
-              <InvoiceItem
+              <ReceiptItem
                 key={item.id}
                 id={item.id}
+                barcode={item.barcode}
                 name={item.name}
-                qty={item.qty}
                 price={item.price}
+                disc={item.disc}
+                qty={item.qty}
+                t_price={item.t_price}
                 onDeleteItem={deleteItemHandler}
-                onEdtiItem={edtiItemHandler}
+                onEdtiItem={editItemHandler}
               />
             ))}
           </tbody>
         </table>
-        <button
-          className="rounded-md bg-blue-500 px-4 py-2 text-sm text-white shadow-sm hover:bg-blue-600"
+        <Button
           type="button"
           onClick={addItemHandler}
         >
-          Add Item
-        </button>
-        <div className="flex flex-col items-end space-y-2 pt-6">
-          <div className="flex w-full justify-between md:w-1/2">
-            <span className="font-bold">Subtotal:</span>
-            <span>${subtotal.toFixed(2)}</span>
-          </div>
-          <div className="flex w-full justify-between md:w-1/2">
-            <span className="font-bold">Discount:</span>
-            <span>
-              ({discount || '0'}%)${discountRate.toFixed(2)}
-            </span>
-          </div>
-          <div className="flex w-full justify-between md:w-1/2">
-            <span className="font-bold">Tax:</span>
-            <span>
-              ({tax || '0'}%)${taxRate.toFixed(2)}
-            </span>
-          </div>
-          <div className="flex w-full justify-between border-t border-gray-900/10 pt-2 md:w-1/2">
-            <span className="font-bold">Total:</span>
-            <span className="font-bold">
-              ${total % 1 === 0 ? total : total.toFixed(2)}
-            </span>
-          </div>
-        </div>
-      </div>
-      <div className="basis-1/4 bg-transparent">
-        <div className="sticky top-0 z-10 space-y-4 divide-y divide-gray-900/10 pb-8 md:pt-6 md:pl-4">
-          <button
-            className="w-full rounded-md bg-blue-500 py-2 text-sm text-white shadow-sm hover:bg-blue-600"
-            type="submit"
-          >
-            Review Invoice
-          </button>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <label className="text-sm font-bold md:text-base" htmlFor="tax">
-                Tax rate:
-              </label>
-              <div className="flex items-center">
-                <input
-                  className="w-full rounded-r-none bg-white shadow-sm"
-                  type="number"
-                  name="tax"
-                  id="tax"
-                  min="0.01"
-                  step="0.01"
-                  placeholder="0.0"
-                  value={tax}
-                  onChange={(event) => setTax(event.target.value)}
-                />
-                <span className="rounded-r-md bg-gray-200 py-2 px-4 text-gray-500 shadow-sm">
-                  %
-                </span>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label
-                className="text-sm font-bold md:text-base"
-                htmlFor="discount"
-              >
-                Discount rate:
-              </label>
-              <div className="flex items-center">
-                <input
-                  className="w-full rounded-r-none bg-white shadow-sm"
-                  type="number"
-                  name="discount"
-                  id="discount"
-                  min="0"
-                  step="0.01"
-                  placeholder="0.0"
-                  value={discount}
-                  onChange={(event) => setDiscount(event.target.value)}
-                />
-                <span className="rounded-r-md bg-gray-200 py-2 px-4 text-gray-500 shadow-sm">
-                  %
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </form>
-  );
-};
-
-export default InvoiceForm;
+          +
+        </Button>
+      </form>
+    </Form>
+  )
+}
