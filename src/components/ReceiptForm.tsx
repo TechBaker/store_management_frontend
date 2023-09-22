@@ -35,12 +35,14 @@ const FormSchema = z.object({
 })
 
 type Item = {
-  id: number,
+  id: string,
+  real_id: number,
   barcode: string,
   name: string,
   price: number,
   disc: number,
   qty: number,
+  real_qty: number,
   t_price: number,
 }
 
@@ -64,17 +66,7 @@ export function ReceiptForm() {
     }
   }
   
-  const [items, setItems] = useState([
-      {
-        id: uid(6),
-        barcode: "",
-        name: "",
-        price: '0.00',
-        disc: '0.00',
-        qty: 1,
-        t_price: '0.00',
-      },
-  ])
+  const [items, setItems] = useState<Item[]>([])
 
   const addItemHandler = () => {
     setItems((prevItem) => [
@@ -83,10 +75,12 @@ export function ReceiptForm() {
         id: uid(6),
         barcode: "",
         name: "",
-        price: '0.00',
-        disc: '0.00',
+        price: 0.00,
+        disc: 0.00,
         qty: 1,
-        t_price: '0.00',
+        t_price: 0.00,
+        real_id: 0,
+        real_qty: 0,
       },
     ])
   }
@@ -108,13 +102,24 @@ export function ReceiptForm() {
             item[key] = editedItem.value;
             if (key === 'barcode') {
               const result = await findItem(item[key])
-              item['name'] = result.product_name
-              item['price'] = result.selling_price
-              item['t_price'] = (item['price'] - (item['price'] * (item['disc'] / 100))) * item['qty']
+              if (result !== null && ( item['qty'] <= result.quantity_in_stock)) {
+                item['real_id'] = result.id
+                item['real_qty'] = result.quantity_in_stock
+                item['name'] = result.product_name
+                item['price'] = result.selling_price
+                item['t_price'] = (item['price'] - (item['price'] * (item['disc'] / 100))) * item['qty']
+              } else {
+                item.barcode = ""
+              }
             } else if (key === 'disc') {
               item['t_price'] = (item['price'] - (item['price'] * (item['disc'] / 100))) * item['qty']
             } else if (key === 'qty') {
-              item['t_price'] = item['price'] * item['qty'];
+              if (item['qty'] <= item['real_qty']) {
+                item['t_price'] = item['price'] * item['qty']
+              } else {
+                item['t_price'] = item['price'] * item['real_qty']
+                item['qty'] = item['real_qty']
+              }
             }
           }
         }
