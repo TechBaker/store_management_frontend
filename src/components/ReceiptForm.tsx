@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
+import { set, useForm } from "react-hook-form"
 import * as z from "zod"
 import { uid } from "uid"
 
@@ -21,9 +21,10 @@ import { Select,
     SelectValue,
     SelectItem } from "./ui/select"
 import { Separator } from "./ui/separator"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { ReceiptItem } from "./ReceiptItem"
 import axios from "axios"
+import { Client } from "@/data/schema"
 
 const FormSchema = z.object({
   client: z.string().min(2, {
@@ -67,6 +68,21 @@ export function ReceiptForm() {
   }
   
   const [items, setItems] = useState<Item[]>([])
+  const [clients, setClients] = useState<Client[]>([])
+
+  const fetchClients = async () => {
+    try {
+      const response = await axios.get('http://localhost:8000/api/clients');
+      const data = await response.data;
+      setClients(data)
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  }
+
+  useEffect(() => {
+    fetchClients()
+  }, [])
 
   const addItemHandler = () => {
     setItems((prevItem) => [
@@ -157,9 +173,24 @@ export function ReceiptForm() {
             render={({ field }) => (
               <FormItem className="w-1/2">
                 <FormLabel>Client</FormLabel>
-                <FormControl>
-                  <Input placeholder="Client" {...field} />
-                </FormControl>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger >
+                      <SelectValue placeholder="Select Client" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {clients.map((client) => (
+                      <SelectItem 
+                        key={client.id}
+                        value={client.id.toString()}
+                      >
+                        {client.first_name + " " + client.last_name}
+                      </SelectItem>
+                    ))
+                    }
+                  </SelectContent>
+                </Select>
                 <FormDescription/>
                 <FormMessage />
               </FormItem>
